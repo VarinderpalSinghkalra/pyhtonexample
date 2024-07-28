@@ -1,48 +1,31 @@
- steps:
-# Step 1: Build Docker Image
-- name: 'gcr.io/cloud-builders/docker'
-  id: 'Build Docker Image'
+steps:
+# Step 1: Delete Docker Images
+- name: 'google/cloud-sdk:latest'
+  id: 'Delete Docker Images'
+  entrypoint: 'sh'
   args:
-    - 'build'
-    - '--no-cache'  # Force a fresh build, avoiding cache
-    - '--progress=plain'  # Verbose output for debugging
-    - '-t'
-    - 'gcr.io/velvety-accord-430502-f0/python-app1:latest'
-    - 'pythonapp'  # Ensure this path is correct and points to your Docker context
+    - '-c'
+    - |
+      echo "Deleting Docker images from registry..."
+      # Replace with your image names and tags
+      gcloud container images delete --force-delete-tags gcr.io/velvety-accord-430502-f0/python-app1:latest --quiet
+      # Add more delete commands if needed for additional images
   waitFor: ['-']
 
-# Step 2: Push Docker Image to Registry
-- name: 'gcr.io/cloud-builders/docker'
-  id: 'Push Docker Image'
-  args:
-    - 'push'
-    - 'gcr.io/velvety-accord-430502-f0/python-app1:latest'
-  waitFor: ['Build Docker Image']
-
-# Step 3: Deploy to Google Cloud
+# Step 2: Delete Deployment Configurations
 - name: 'google/cloud-sdk:latest'
-  id: 'Deploy to Google Cloud'
+  id: 'Delete Deployment Resources'
   entrypoint: 'sh'
   args:
     - '-c'
     - |
-      echo "Applying deployment configurations..."
-      gcloud deploy apply --file deploy/pipeline.yaml --region=us-central1
-      gcloud deploy apply --file deploy/dev.yaml --region=us-central1
-      echo "Creating release..."
-      gcloud deploy releases create 'app-release-${SHORT_SHA}' --delivery-pipeline=gke-cicd-pipeline --region=us-central1 --skaffold-file=skaffold.yaml
-  waitFor: ['Push Docker Image']
-
-# Step 4: Delete Docker Image from Registry
-- name: 'google/cloud-sdk:latest'
-  id: 'Delete Docker Image'
-  entrypoint: 'sh'
-  args:
-    - '-c'
-    - |
-      echo "Deleting Docker image from registry..."
-      gcloud container images delete --force-delete-tags gcr.io/velvety-accord-430502-f0/python-app1:latest --quiet
-  waitFor: ['Deploy to Google Cloud']
+      echo "Deleting deployment resources..."
+      # Delete deployments
+      gcloud deploy releases delete --delivery-pipeline=gke-cicd-pipeline --region=us-central1 --quiet
+      # Delete deployment configurations
+      gcloud deploy apply --file deploy/pipeline.yaml --region=us-central1 --delete
+      gcloud deploy apply --file deploy/dev.yaml --region=us-central1 --delete
+  waitFor: ['Delete Docker Images']
 
 options:
   logging: CLOUD_LOGGING_ONLY
