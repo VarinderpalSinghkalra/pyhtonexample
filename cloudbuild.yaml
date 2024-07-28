@@ -6,7 +6,7 @@ images:
 - 'gcr.io/velvety-accord-430502-f0/python-app1:latest'
 
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'us-central1-docker.pkg.dev/velvety-accord-430502-f0/python-app1', './pythonapp1' ]
+  args: ['build', '-t', 'us-central1-docker.pkg.dev/velvety-accord-430502-f0/python-app1', './pythonapp' ]
   id: 'Build Docker Image'
 
   # images:
