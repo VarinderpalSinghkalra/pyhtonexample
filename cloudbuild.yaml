@@ -8,7 +8,10 @@ steps:
     - |
       set -x  # Print commands and their arguments as they are executed
       echo "Deleting Docker images from registry..."
-      gcloud container images delete --force-delete-tags gcr.io/velvety-accord-430502-f0/python-app1:latest --quiet
+      if ! gcloud container images delete --force-delete-tags gcr.io/velvety-accord-430502-f0/python-app1:latest --quiet; then
+        echo "Failed to delete Docker image"
+        exit 1
+      fi
   waitFor: ['-']
 
 # Step 2: Delete Deployment Configurations
@@ -20,9 +23,18 @@ steps:
     - |
       set -x  # Print commands and their arguments as they are executed
       echo "Deleting deployment resources..."
-      gcloud deploy releases delete --delivery-pipeline=gke-cicd-pipeline --region=us-central1 --quiet
-      gcloud deploy apply --file deploy/pipeline.yaml --region=us-central1 --delete
-      gcloud deploy apply --file deploy/dev.yaml --region=us-central1 --delete
+      if ! gcloud deploy releases delete --delivery-pipeline=gke-cicd-pipeline --region=us-central1 --quiet; then
+        echo "Failed to delete deployment releases"
+        exit 1
+      fi
+      if ! gcloud deploy apply --file deploy/pipeline.yaml --region=us-central1 --delete; then
+        echo "Failed to delete pipeline configuration"
+        exit 1
+      fi
+      if ! gcloud deploy apply --file deploy/dev.yaml --region=us-central1 --delete; then
+        echo "Failed to delete dev configuration"
+        exit 1
+      fi
   waitFor: ['Delete Docker Images']
 
 options:
