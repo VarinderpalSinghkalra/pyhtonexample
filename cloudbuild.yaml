@@ -1,7 +1,7 @@
 steps:
  
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '--no-cache', '-t', 'gcr.io/velvety-accord-430502-f0/python-app1:latest', '.']
+  args: ['build', '--no-cache', '-t', 'gcr.io/velvety-accord-430502-f0/python-app1:latest', 'pythonapp']
 images:
 - 'gcr.io/velvety-accord-430502-f0/python-app1:latest'
 
