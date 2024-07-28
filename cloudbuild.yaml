@@ -8,10 +8,12 @@ steps:
     - |
       set -x  # Enable debugging
       echo "Deleting deployment resources..."
+      # Delete deployment releases
       if ! gcloud deploy releases delete --delivery-pipeline=gke-cicd-pipeline --region=us-central1 --quiet; then
         echo "Failed to delete deployment releases"
         exit 1
       fi
+      # Delete deployment configurations
       if ! gcloud deploy apply --file deploy/pipeline.yaml --region=us-central1 --delete; then
         echo "Failed to delete pipeline configuration"
         exit 1
@@ -21,7 +23,7 @@ steps:
         exit 1
       fi
 
-# Additional step to verify or apply new configurations, if needed
+# Optional: Step to Apply New Configurations
 - name: 'google/cloud-sdk:latest'
   id: 'Apply New Configurations'
   entrypoint: 'sh'
@@ -30,10 +32,19 @@ steps:
     - |
       set -x  # Enable debugging
       echo "Applying new deployment configurations..."
-      gcloud deploy apply --file deploy/pipeline.yaml --region=us-central1
-      gcloud deploy apply --file deploy/dev.yaml --region=us-central1
+      if ! gcloud deploy apply --file deploy/pipeline.yaml --region=us-central1; then
+        echo "Failed to apply pipeline configuration"
+        exit 1
+      fi
+      if ! gcloud deploy apply --file deploy/dev.yaml --region=us-central1; then
+        echo "Failed to apply dev configuration"
+        exit 1
+      fi
       echo "Creating new release..."
-      gcloud deploy releases create 'app-release-${SHORT_SHA}' --delivery-pipeline=gke-cicd-pipeline --region=us-central1 --skaffold-file=skaffold.yaml
+      if ! gcloud deploy releases create 'app-release-${SHORT_SHA}' --delivery-pipeline=gke-cicd-pipeline --region=us-central1 --skaffold-file=skaffold.yaml; then
+        echo "Failed to create release"
+        exit 1
+      fi
   waitFor: ['Delete Deployment Resources']
 
 options:
