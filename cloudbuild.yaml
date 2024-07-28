@@ -1,21 +1,24 @@
 steps:
+# Build Docker Image
 - name: 'gcr.io/cloud-builders/docker'
   id: 'Build Docker Image'
   args:
     - 'build'
-    - '--no-cache'
+    - '--no-cache'  # Force a fresh build
     - '-t'
     - 'gcr.io/velvety-accord-430502-f0/python-app1:latest'
     - 'pythonapp'
-  waitFor: ['-']
+  waitFor: ['-']  # Ensure this step completes before moving to the next
 
+# Push Docker Image to Registry
 - name: 'gcr.io/cloud-builders/docker'
   id: 'Push Docker Image'
   args:
     - 'push'
     - 'gcr.io/velvety-accord-430502-f0/python-app1:latest'
-  waitFor: ['Build Docker Image']
+  waitFor: ['Build Docker Image']  # Ensure image is built before pushing
 
+# Deployment Steps
 - name: 'google/cloud-sdk:latest'
   id: 'Deploy to Google Cloud'
   entrypoint: 'sh'
