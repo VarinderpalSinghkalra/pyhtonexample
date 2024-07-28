@@ -1,27 +1,41 @@
 steps:
+# Build Docker Image
 - name: 'gcr.io/cloud-builders/docker'
+  id: 'Build Docker Image'
   args:
     - 'build'
-    - '--no-cache'
+    - '--no-cache'  # Force a fresh build to avoid using cached layers
     - '-t'
     - 'gcr.io/velvety-accord-430502-f0/python-app1:latest'
-    - 'pythonapp1'
-  id: 'Build Docker Image'
+    - 'pythonapp'
+  waitFor: ['-']  # Ensure this step completes before moving to the next
 
+# Push Docker Image to Registry
 - name: 'gcr.io/cloud-builders/docker'
+  id: 'Push Docker Image'
   args:
     - 'push'
     - 'gcr.io/velvety-accord-430502-f0/python-app1:latest'
-  id: 'Push Docker Image'
+  waitFor: ['Build Docker Image']  # Ensure image is built before pushing
 
+# Example: Additional Docker Build and Push (Uncomment and adjust if needed)
+# - name: 'gcr.io/cloud-builders/docker'
+#   id: 'Build Docker Image2'
+#   args:
+#     - 'build'
+#     - '--no-cache'
+#     - '-t'
+#     - 'us-central1-docker.pkg.dev/velvety-accord-430502-f0/gke-repo/flask-image'
+#     - './app2'
+#   waitFor: ['Push Docker Image']
+
+# - name: 'gcr.io/cloud-builders/docker'
+#   id: 'Push Docker Image2'
+#   args:
+#     - 'push'
+#     - 'us-central1-docker.pkg.dev/velvety-accord-430502-f0/gke-repo/flask-image'
+#   waitFor: ['Build Docker Image2']
+
+# Deployment Steps
 - name: 'google/cloud-sdk:latest'
-  entrypoint: 'sh'
-  args:
-    - '-c'
-    - |
-      gcloud deploy apply --file deploy/pipeline.yaml --region=us-central1
-      gcloud deploy apply --file deploy/dev.yaml --region=us-central1
-      gcloud deploy releases create 'app-release-${SHORT_SHA}' --delivery-pipeline=gke-cicd-pipeline --region=us-central1 --skaffold-file=skaffold.yaml
-
-options:
-  logging: CLOUD_LOGGING_ONLY
+  id: 'Deploy to Googl
