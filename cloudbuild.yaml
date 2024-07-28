@@ -1,13 +1,13 @@
 steps:
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'us-central1-docker.pkg.dev/velvety-accord-430502-f0', './pythonapp' ]
+  args: ['build', '-t', 'us-central1-docker.pkg.dev/velvety-accord-430502-f0/python-app', './pythonapp' ]
   id: 'Build Docker Image'
 
   # images:
   # - 'us-central1-docker.pkg.dev/<your_project_id>/gke-repo/quickstart-image'
 
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'us-central1-docker.pkg.dev/velvety-accord-430502-f0' ]
+  args: ['push', 'us-central1-docker.pkg.dev/velvety-accord-430502-f0/pyhton-app' ]
   id: 'Push Docker Image'
 
 #- name: 'gcr.io/cloud-builders/docker'
