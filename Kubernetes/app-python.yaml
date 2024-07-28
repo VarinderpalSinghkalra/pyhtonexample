@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: "pythonapp-sha256-1"
-        image: "gcr.io/velvety-accord-430502-f0/pythonapp@sha256:01feaf852aa951d494a44ceca39aa5e74a186453272bceb792bc6dab117db6b7"
+        image: "gcr.io/velvety-accord-430502-f0/pythonapp"
 ---
 apiVersion: "autoscaling/v2"
 kind: "HorizontalPodAutoscaler"
