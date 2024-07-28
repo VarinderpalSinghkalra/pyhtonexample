@@ -55,4 +55,35 @@ steps:
             echo "Failed to delete configuration: $FILE"
             exit 1
           fi
-     
+        else
+          echo "Configuration file not found: $FILE"
+        fi
+      done
+
+# Optional Step: Clean Up Additional Resources
+- name: 'google/cloud-sdk:latest'
+  id: 'Clean Up Additional Resources'
+  entrypoint: 'sh'
+  args:
+    - '-c'
+    - |
+      set -x  # Enable debugging
+      echo "Performing additional clean-up tasks..."
+      # Example: Delete Cloud Storage buckets
+      BUCKETS=("bucket1" "bucket2")
+      for BUCKET in "${BUCKETS[@]}"; do
+        if gsutil ls -b "gs://$BUCKET" >/dev/null 2>&1; then
+          if gsutil rm -r "gs://$BUCKET"; then
+            echo "Successfully deleted bucket: $BUCKET"
+          else
+            echo "Failed to delete bucket: $BUCKET"
+            exit 1
+          fi
+        else
+          echo "Bucket not found: $BUCKET"
+        fi
+      done
+  waitFor: ['Delete Deployment Configurations']
+
+options:
+  logging: CLOUD_LOGGING_ONLY
