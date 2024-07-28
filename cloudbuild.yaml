@@ -8,48 +8,51 @@ steps:
     - |
       set -x  # Enable debugging
       echo "Deleting Docker images from Google Container Registry..."
-      # Delete Docker images
-      if ! gcloud container images delete --force-delete-tags gcr.io/velvety-accord-430502-f0/python-app1:latest --quiet; then
-        echo "Failed to delete Docker image"
-        exit 1
+      # Delete Docker image
+      IMAGE="gcr.io/velvety-accord-430502-f0/python-app1:latest"
+      if gcloud container images list --format='get(uri)' | grep -q "$IMAGE"; then
+        if gcloud container images delete "$IMAGE" --force-delete-tags --quiet; then
+          echo "Successfully deleted Docker image: $IMAGE"
+        else
+          echo "Failed to delete Docker image: $IMAGE"
+          exit 1
+        fi
+      else
+        echo "Docker image not found: $IMAGE"
       fi
 
 # Step 2: Delete Deployment Configurations
 - name: 'google/cloud-sdk:latest'
-  id: 'Delete Deployment Resources'
+  id: 'Delete Deployment Configurations'
   entrypoint: 'sh'
   args:
     - '-c'
     - |
       set -x  # Enable debugging
       echo "Deleting deployment resources..."
+      DELIVERY_PIPELINE="gke-cicd-pipeline"
+      REGION="us-central1"
+      
       # Delete deployment releases
-      if ! gcloud deploy releases delete --delivery-pipeline=gke-cicd-pipeline --region=us-central1 --quiet; then
-        echo "Failed to delete deployment releases"
-        exit 1
+      if gcloud deploy releases list --delivery-pipeline=$DELIVERY_PIPELINE --region=$REGION --format='value(name)' | grep -q .; then
+        if gcloud deploy releases delete --delivery-pipeline=$DELIVERY_PIPELINE --region=$REGION --quiet; then
+          echo "Successfully deleted deployment releases"
+        else
+          echo "Failed to delete deployment releases"
+          exit 1
+        fi
+      else
+        echo "No deployment releases found for pipeline: $DELIVERY_PIPELINE"
       fi
-      # Delete deployment configurations
-      if ! gcloud deploy apply --file deploy/pipeline.yaml --region=us-central1 --delete; then
-        echo "Failed to delete pipeline configuration"
-        exit 1
-      fi
-      if ! gcloud deploy apply --file deploy/dev.yaml --region=us-central1 --delete; then
-        echo "Failed to delete dev configuration"
-        exit 1
-      fi
-
-# Optional Step: Clean Up Any Additional Resources
-- name: 'google/cloud-sdk:latest'
-  id: 'Clean Up Additional Resources'
-  entrypoint: 'sh'
-  args:
-    - '-c'
-    - |
-      set -x  # Enable debugging
-      echo "Performing additional clean-up tasks..."
-      # Add commands for any other clean-up tasks here
-      # For example, deleting logs or other resources
-  waitFor: ['Delete Deployment Resources']
-
-options:
-  logging: CLOUD_LOGGING_ONLY
+      
+      # Delete pipeline configurations
+      CONFIG_FILES=("deploy/pipeline.yaml" "deploy/dev.yaml")
+      for FILE in "${CONFIG_FILES[@]}"; do
+        if [ -f "$FILE" ]; then
+          if gcloud deploy apply --file "$FILE" --region=$REGION --delete; then
+            echo "Successfully deleted configuration: $FILE"
+          else
+            echo "Failed to delete configuration: $FILE"
+            exit 1
+          fi
+     
