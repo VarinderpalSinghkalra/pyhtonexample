@@ -1,25 +1,25 @@
 steps:
-# Build Docker Image
+# Step 1: Build Docker Image
 - name: 'gcr.io/cloud-builders/docker'
   id: 'Build Docker Image'
   args:
     - 'build'
-    - '--no-cache'  # Force a fresh build
+    - '--no-cache'  # Force a fresh build, avoiding cache
     - '--progress=plain'  # Verbose output for debugging
     - '-t'
     - 'gcr.io/velvety-accord-430502-f0/python-app1:latest'
     - 'pythonapp'  # Ensure this path is correct and points to your Docker context
-  waitFor: ['-']  # Ensure this step completes before moving to the next
+  waitFor: ['-']
 
-# Push Docker Image to Registry
+# Step 2: Push Docker Image to Registry
 - name: 'gcr.io/cloud-builders/docker'
   id: 'Push Docker Image'
   args:
     - 'push'
     - 'gcr.io/velvety-accord-430502-f0/python-app1:latest'
-  waitFor: ['Build Docker Image']  # Ensure the image is built before pushing
+  waitFor: ['Build Docker Image']
 
-# Deployment Steps
+# Step 3: Deploy to Google Cloud
 - name: 'google/cloud-sdk:latest'
   id: 'Deploy to Google Cloud'
   entrypoint: 'sh'
@@ -31,7 +31,7 @@ steps:
       gcloud deploy apply --file deploy/dev.yaml --region=us-central1
       echo "Creating release..."
       gcloud deploy releases create 'app-release-${SHORT_SHA}' --delivery-pipeline=gke-cicd-pipeline --region=us-central1 --skaffold-file=skaffold.yaml
-  waitFor: ['Push Docker Image']  # Ensure Docker image is pushed before deployment
+  waitFor: ['Push Docker Image']
 
 options:
   logging: CLOUD_LOGGING_ONLY
