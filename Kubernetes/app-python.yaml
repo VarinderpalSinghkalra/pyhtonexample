@@ -15,10 +15,6 @@ spec:
     metadata:
       labels:
         app: "app-python"
-    spec:
-      containers:
-      - name: "pythonapp-sha256-1"
-        image: "gcr.io/velvety-accord-430502-f0/pythonapp"
 ---
 apiVersion: "autoscaling/v2"
 kind: "HorizontalPodAutoscaler"
