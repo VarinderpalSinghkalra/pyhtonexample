@@ -1,20 +1,5 @@
 steps:
-# Step 1: Delete Docker Images
-- name: 'google/cloud-sdk:latest'
-  id: 'Delete Docker Images'
-  entrypoint: 'sh'
-  args:
-    - '-c'
-    - |
-      set -x  # Enable debugging
-      echo "Deleting Docker images from registry..."
-      if ! gcloud container images delete --force-delete-tags gcr.io/velvety-accord-430502-f0/python-app1:latest --quiet; then
-        echo "Failed to delete Docker image"
-        exit 1
-      fi
-  waitFor: ['-']
-
-# Step 2: Delete Deployment Configurations
+# Step 1: Delete Deployment Configurations
 - name: 'google/cloud-sdk:latest'
   id: 'Delete Deployment Resources'
   entrypoint: 'sh'
@@ -35,7 +20,21 @@ steps:
         echo "Failed to delete dev configuration"
         exit 1
       fi
-  waitFor: ['Delete Docker Images']
+
+# Additional step to verify or apply new configurations, if needed
+- name: 'google/cloud-sdk:latest'
+  id: 'Apply New Configurations'
+  entrypoint: 'sh'
+  args:
+    - '-c'
+    - |
+      set -x  # Enable debugging
+      echo "Applying new deployment configurations..."
+      gcloud deploy apply --file deploy/pipeline.yaml --region=us-central1
+      gcloud deploy apply --file deploy/dev.yaml --region=us-central1
+      echo "Creating new release..."
+      gcloud deploy releases create 'app-release-${SHORT_SHA}' --delivery-pipeline=gke-cicd-pipeline --region=us-central1 --skaffold-file=skaffold.yaml
+  waitFor: ['Delete Deployment Resources']
 
 options:
   logging: CLOUD_LOGGING_ONLY
