@@ -5,7 +5,7 @@ steps:
     - '--no-cache'
     - '-t'
     - 'gcr.io/velvety-accord-430502-f0/python-app1:latest'
-    - 'pythonapp'
+    - 'pythonapp1'
   id: 'Build Docker Image'
 
 - name: 'gcr.io/cloud-builders/docker'
