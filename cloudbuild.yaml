@@ -8,18 +8,16 @@ steps:
     - |
       set -x  # Enable debugging
       echo "Deleting Docker images from Google Container Registry..."
-      # Delete Docker image
-      IMAGE="gcr.io/velvety-accord-430502-f0/python-app1:latest"
-      if gcloud container images list --format='get(uri)' | grep -q "$IMAGE"; then
+      # List Docker images and delete them
+      IMAGES=$(gcloud container images list --format='get(uri)')
+      for IMAGE in $IMAGES; do
         if gcloud container images delete "$IMAGE" --force-delete-tags --quiet; then
           echo "Successfully deleted Docker image: $IMAGE"
         else
           echo "Failed to delete Docker image: $IMAGE"
           exit 1
         fi
-      else
-        echo "Docker image not found: $IMAGE"
-      fi
+      done
 
 # Step 2: Delete Deployment Configurations
 - name: 'google/cloud-sdk:latest'
@@ -34,16 +32,15 @@ steps:
       REGION="us-central1"
       
       # Delete deployment releases
-      if gcloud deploy releases list --delivery-pipeline=$DELIVERY_PIPELINE --region=$REGION --format='value(name)' | grep -q .; then
-        if gcloud deploy releases delete --delivery-pipeline=$DELIVERY_PIPELINE --region=$REGION --quiet; then
-          echo "Successfully deleted deployment releases"
+      RELEASES=$(gcloud deploy releases list --delivery-pipeline=$DELIVERY_PIPELINE --region=$REGION --format='value(name)')
+      for RELEASE in $RELEASES; do
+        if gcloud deploy releases delete "$RELEASE" --delivery-pipeline=$DELIVERY_PIPELINE --region=$REGION --quiet; then
+          echo "Successfully deleted deployment release: $RELEASE"
         else
-          echo "Failed to delete deployment releases"
+          echo "Failed to delete deployment release: $RELEASE"
           exit 1
         fi
-      else
-        echo "No deployment releases found for pipeline: $DELIVERY_PIPELINE"
-      fi
+      done
       
       # Delete pipeline configurations
       CONFIG_FILES=("deploy/pipeline.yaml" "deploy/dev.yaml")
@@ -60,6 +57,25 @@ steps:
         fi
       done
 
+# Optional Step: Clean Up Cloud Storage Buckets
+- name: 'google/cloud-sdk:latest'
+  id: 'Clean Up Cloud Storage Buckets'
+  entrypoint: 'sh'
+  args:
+    - '-c'
+    - |
+      set -x  # Enable debugging
+      echo "Cleaning up Cloud Storage buckets..."
+      BUCKETS=$(gsutil ls)
+      for BUCKET in $BUCKETS; do
+        if gsutil rm -r "$BUCKET"; then
+          echo "Successfully deleted bucket: $BUCKET"
+        else
+          echo "Failed to delete bucket: $BUCKET"
+          exit 1
+        fi
+      done
+
 # Optional Step: Clean Up Additional Resources
 - name: 'google/cloud-sdk:latest'
   id: 'Clean Up Additional Resources'
@@ -69,21 +85,10 @@ steps:
     - |
       set -x  # Enable debugging
       echo "Performing additional clean-up tasks..."
-      # Example: Delete Cloud Storage buckets
-      BUCKETS=("bucket1" "bucket2")
-      for BUCKET in "${BUCKETS[@]}"; do
-        if gsutil ls -b "gs://$BUCKET" >/dev/null 2>&1; then
-          if gsutil rm -r "gs://$BUCKET"; then
-            echo "Successfully deleted bucket: $BUCKET"
-          else
-            echo "Failed to delete bucket: $BUCKET"
-            exit 1
-          fi
-        else
-          echo "Bucket not found: $BUCKET"
-        fi
-      done
-  waitFor: ['Delete Deployment Configurations']
+      # Add additional clean-up tasks here
+      # For example, deleting any other project-specific resources or configurations
+      # Customize as needed
+  waitFor: ['Clean Up Cloud Storage Buckets']
 
 options:
   logging: CLOUD_LOGGING_ONLY
