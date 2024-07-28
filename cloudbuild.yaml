@@ -1,5 +1,20 @@
 steps:
-# Step 1: Delete Deployment Configurations
+# Step 1: Delete Docker Images
+- name: 'google/cloud-sdk:latest'
+  id: 'Delete Docker Images'
+  entrypoint: 'sh'
+  args:
+    - '-c'
+    - |
+      set -x  # Enable debugging
+      echo "Deleting Docker images from Google Container Registry..."
+      # Delete Docker images
+      if ! gcloud container images delete --force-delete-tags gcr.io/velvety-accord-430502-f0/python-app1:latest --quiet; then
+        echo "Failed to delete Docker image"
+        exit 1
+      fi
+
+# Step 2: Delete Deployment Configurations
 - name: 'google/cloud-sdk:latest'
   id: 'Delete Deployment Resources'
   entrypoint: 'sh'
@@ -23,28 +38,17 @@ steps:
         exit 1
       fi
 
-# Optional: Step to Apply New Configurations
+# Optional Step: Clean Up Any Additional Resources
 - name: 'google/cloud-sdk:latest'
-  id: 'Apply New Configurations'
+  id: 'Clean Up Additional Resources'
   entrypoint: 'sh'
   args:
     - '-c'
     - |
       set -x  # Enable debugging
-      echo "Applying new deployment configurations..."
-      if ! gcloud deploy apply --file deploy/pipeline.yaml --region=us-central1; then
-        echo "Failed to apply pipeline configuration"
-        exit 1
-      fi
-      if ! gcloud deploy apply --file deploy/dev.yaml --region=us-central1; then
-        echo "Failed to apply dev configuration"
-        exit 1
-      fi
-      echo "Creating new release..."
-      if ! gcloud deploy releases create 'app-release-${SHORT_SHA}' --delivery-pipeline=gke-cicd-pipeline --region=us-central1 --skaffold-file=skaffold.yaml; then
-        echo "Failed to create release"
-        exit 1
-      fi
+      echo "Performing additional clean-up tasks..."
+      # Add commands for any other clean-up tasks here
+      # For example, deleting logs or other resources
   waitFor: ['Delete Deployment Resources']
 
 options:
