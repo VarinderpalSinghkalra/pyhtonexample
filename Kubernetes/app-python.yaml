@@ -1,0 +1,43 @@
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "app-python"
+  namespace: "default"
+  labels:
+    app: "app-python"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: "app-python"
+  template:
+    metadata:
+      labels:
+        app: "app-python"
+    spec:
+      containers:
+      - name: "pythonapp-sha256-1"
+        image: "gcr.io/velvety-accord-430502-f0/pythonapp@sha256:01feaf852aa951d494a44ceca39aa5e74a186453272bceb792bc6dab117db6b7"
+---
+apiVersion: "autoscaling/v2"
+kind: "HorizontalPodAutoscaler"
+metadata:
+  name: "app-python-hpa-jotl"
+  namespace: "default"
+  labels:
+    app: "app-python"
+spec:
+  scaleTargetRef:
+    kind: "Deployment"
+    name: "app-python"
+    apiVersion: "apps/v1"
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+  - type: "Resource"
+    resource:
+      name: "cpu"
+      target:
+        type: "Utilization"
+        averageUtilization: 80
