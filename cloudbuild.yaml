@@ -14,10 +14,11 @@ steps:
     - 'gcr.io/velvety-accord-430502-f0/python-app1:latest'
   id: 'Push Docker Image'
 
-# Uncomment and adjust as needed
+# Uncomment and correct if needed
 # - name: 'gcr.io/cloud-builders/docker'
 #   args:
 #     - 'build'
+#     - '--no-cache'
 #     - '-t'
 #     - 'us-central1-docker.pkg.dev/velvety-accord-430502-f0/gke-repo/flask-image'
 #     - './app2'
